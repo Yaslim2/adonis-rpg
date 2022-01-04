@@ -14,13 +14,16 @@ export default class PasswordsController {
 
     const random = await promisify(randomBytes)(24)
     const token = random.toString('hex')
+
     await user.related('tokens').updateOrCreate(
       {
         userId: user.id,
       },
       { token }
     )
-    const resetPasswordUrlWithToken = `${resetPasswordUrl}?token=${token}`
+    const resetPasswordUrlWithToken = `${resetPasswordUrl}${
+      resetPasswordUrl.slice(-1) === '/' ? '' : '/'
+    }?token=${token}`
     await Mail.send((message) => {
       message
         .from('no-reply@rpg.com')

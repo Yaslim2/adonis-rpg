@@ -30,6 +30,7 @@ test.group('Password', (group) => {
 
   test('it should create a reset password token', async (assert) => {
     const user = await UserFactory.create()
+    Mail.trap(() => {})
     await supertest(BASE_URL)
       .post('/forgot-password')
       .send({
@@ -40,6 +41,7 @@ test.group('Password', (group) => {
 
     const tokens = await user.related('tokens').query()
     assert.isNotEmpty(tokens)
+    Mail.restore()
   })
 
   test('it should return 422 when required data is not provided or data is invalid (forgot password)', async (assert) => {

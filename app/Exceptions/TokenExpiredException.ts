@@ -6,7 +6,7 @@ export default class TokenExpiredException extends Exception {
   public status = 410
 
   constructor() {
-    super('Token has expired')
+    super('Token expired')
   }
 
   public async handle(error: this, ctx: HttpContextContract) {

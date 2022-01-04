@@ -1,11 +1,13 @@
+import User from 'App/Models/User'
 import Hash from '@ioc:Adonis/Core/Hash'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { UserFactory } from 'Database/factories'
 import test from 'japa'
 import supertest from 'supertest'
+let user = {} as User
 
 const BASE_URL = `http://${process.env.HOST}:${process.env.PORT}`
-
+let token = ''
 test.group('User', (group) => {
   test('it should create an user', async (assert) => {
     const userPayload = {
@@ -35,7 +37,7 @@ test.group('User', (group) => {
     assert.exists(body.message)
     assert.exists(body.code)
     assert.exists(body.status)
-    assert.include(body.message, 'email')
+    assert.include(body.message, 'Email')
     assert.equal(body.code, 'BAD_REQUEST')
     assert.equal(body.status, 409)
   })
@@ -54,7 +56,7 @@ test.group('User', (group) => {
     assert.exists(body.message)
     assert.exists(body.code)
     assert.exists(body.status)
-    assert.include(body.message, 'username')
+    assert.include(body.message, 'Username')
     assert.equal(body.code, 'BAD_REQUEST')
     assert.equal(body.status, 409)
   })
@@ -90,29 +92,27 @@ test.group('User', (group) => {
   })
 
   test('it should update an user', async (assert) => {
-    const { id, password } = await UserFactory.create()
-    const email = 'email@email.com'
-    const avatar = 'http://github.com.br/yaslim-soares.png'
     const { body } = await supertest(BASE_URL)
-      .put(`/users/${id}`)
+      .put(`/users/${user.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send({
-        email,
-        password,
-        avatar,
+        email: user.email,
+        password: user.password,
+        avatar: user.avatar,
       })
       .expect(200)
 
     assert.exists(body.user, 'User undefined')
-    assert.equal(body.user.id, id)
-    assert.equal(body.user.email, email)
-    assert.equal(body.user.avatar, avatar)
+    assert.equal(body.user.id, user.id)
+    assert.equal(body.user.email, user.email)
+    assert.equal(body.user.avatar, user.avatar)
   })
 
   test('it should update the password of the user', async (assert) => {
-    const user = await UserFactory.create()
     const password = 'teste'
     const { body } = await supertest(BASE_URL)
       .put(`/users/${user.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send({
         email: user.email,
         password,
@@ -129,7 +129,11 @@ test.group('User', (group) => {
 
   test('it should return 422 when required data is not provided', async (assert) => {
     const { id } = await UserFactory.create()
-    const { body } = await supertest(BASE_URL).put(`/users/${id}`).send({}).expect(422)
+    const { body } = await supertest(BASE_URL)
+      .put(`/users/${id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({})
+      .expect(422)
     assert.equal(body.code, 'BAD_REQUEST')
     assert.equal(body.status, 422)
   })
@@ -139,6 +143,7 @@ test.group('User', (group) => {
     const email = 'test@'
     const { body } = await supertest(BASE_URL)
       .put(`/users/${id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send({ password, email })
       .expect(422)
     assert.equal(body.code, 'BAD_REQUEST')
@@ -150,6 +155,7 @@ test.group('User', (group) => {
     const password = '123'
     const { body } = await supertest(BASE_URL)
       .put(`/users/${id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send({ password, email })
       .expect(422)
     assert.equal(body.code, 'BAD_REQUEST')
@@ -161,10 +167,23 @@ test.group('User', (group) => {
     const avatar = 'http:'
     const { body } = await supertest(BASE_URL)
       .put(`/users/${id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send({ password, email, avatar })
       .expect(422)
     assert.equal(body.code, 'BAD_REQUEST')
     assert.equal(body.status, 422)
+  })
+
+  group.before(async () => {
+    const plainPassword = '1234'
+    const newUser = await UserFactory.merge({ password: plainPassword }).create()
+    const { body } = await supertest(BASE_URL)
+      .post('/sessions')
+      .send({ email: newUser.email, password: plainPassword })
+      .expect(201)
+
+    token = body.token.token
+    user = newUser
   })
 
   group.beforeEach(async () => {
