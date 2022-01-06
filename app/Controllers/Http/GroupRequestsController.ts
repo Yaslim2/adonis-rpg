@@ -7,11 +7,11 @@ export default class GroupRequestsController {
   public async index({ request, response, bouncer }: HttpContextContract) {
     const { master } = request.qs()
     if (!master) throw new BadRequest('master query should be provided', 422)
-    await bouncer.with('GroupRequestPolicy').authorize('view', Number(master))
+    await bouncer.with('GroupRequestPolicy').authorize('view', +master)
     const groupRequests = await GroupRequest.query()
       .select('id', 'groupId', 'userId', 'status')
       .whereHas('group', (query) => {
-        query.where('master', Number(master))
+        query.where('master', +master)
       })
       .where('status', 'PENDING')
       .preload('group', (query) => {
@@ -49,8 +49,8 @@ export default class GroupRequestsController {
   }
 
   public async accept({ request, response, bouncer }: HttpContextContract) {
-    const groupId = Number(request.param('groupId'))
-    const requestId = Number(request.param('requestId'))
+    const groupId = +request.param('groupId')
+    const requestId = +request.param('requestId')
 
     const groupRequest = await GroupRequest.query()
       .where('id', requestId)
@@ -68,8 +68,8 @@ export default class GroupRequestsController {
   }
 
   public async destroy({ request, response, bouncer }: HttpContextContract) {
-    const groupId = Number(request.param('groupId'))
-    const requestId = Number(request.param('requestId'))
+    const groupId = +request.param('groupId')
+    const requestId = +request.param('requestId')
     const groupRequest = await GroupRequest.query()
       .where('id', requestId)
       .andWhere('groupId', groupId)
