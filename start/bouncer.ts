@@ -1,4 +1,3 @@
-import User from 'App/Models/User'
 /**
  * Contract source: https://git.io/Jte3T
  *
@@ -30,9 +29,7 @@ import Bouncer from '@ioc:Adonis/Addons/Bouncer'
 | NOTE: Always export the "actions" const from this file
 |****************************************************************
 */
-export const { actions } = Bouncer.define('updateUser', (user: User, updatedUser: User) => {
-  return user.id === updatedUser.id
-})
+export const { actions } = Bouncer
 
 /*
 |--------------------------------------------------------------------------
@@ -57,4 +54,7 @@ export const { actions } = Bouncer.define('updateUser', (user: User, updatedUser
 | NOTE: Always export the "policies" const from this file
 |****************************************************************
 */
-export const { policies } = Bouncer.registerPolicies({})
+export const { policies } = Bouncer.registerPolicies({
+  UserPolicy: () => import('App/Policies/UserPolicy'),
+  GroupRequestPolicy: () => import('App/Policies/GroupRequestPolicy'),
+})

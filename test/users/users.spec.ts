@@ -4,10 +4,11 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import { UserFactory } from 'Database/factories'
 import test from 'japa'
 import supertest from 'supertest'
+
 let user = {} as User
+let token: string = ''
 
 const BASE_URL = `http://${process.env.HOST}:${process.env.PORT}`
-let token = ''
 test.group('User', (group) => {
   test('it should create an user', async (assert) => {
     const userPayload = {
@@ -21,6 +22,50 @@ test.group('User', (group) => {
     assert.equal(body.user.email, userPayload.email)
     assert.equal(body.user.username, userPayload.username)
     assert.notExists(body.user.password, 'Password defined')
+  })
+
+  test('it should be able to get user data by id', async (assert) => {
+    const { body } = await supertest(BASE_URL)
+      .get(`/users/${user.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send()
+      .expect(200)
+
+    assert.exists(body.user, 'User undefined')
+    assert.equal(body.user.id, user.id)
+  })
+
+  test('it should return 404 when try to get an user data with an invalid id', async (assert) => {
+    const { body } = await supertest(BASE_URL)
+      .get(`/users/aaaa`)
+      .set('Authorization', `Bearer ${token}`)
+      .send()
+      .expect(404)
+
+    assert.equal(body.code, 'BAD_REQUEST')
+    assert.equal(body.status, 404)
+    assert.include(body.message, 'resource')
+  })
+
+  test('it should return 401 when try to get an user data without been logged', async (assert) => {
+    const { body } = await supertest(BASE_URL).get(`/users/${user.id}`).send().expect(401)
+
+    assert.equal(body.code, 'BAD_REQUEST')
+    assert.equal(body.status, 401)
+    assert.include(body.message, 'Unauthorized')
+  })
+
+  test('it should return 403 when try to get an user data without be him logged', async (assert) => {
+    const { id } = await UserFactory.create()
+    const { body } = await supertest(BASE_URL)
+      .get(`/users/${id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send()
+      .expect(403)
+
+    assert.equal(body.code, 'BAD_REQUEST')
+    assert.equal(body.status, 403)
+    assert.include(body.message, 'authorized')
   })
 
   test('it should return 409 when email is already in use', async (assert) => {

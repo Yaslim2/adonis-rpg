@@ -1,5 +1,5 @@
 import User from 'App/Models/User'
-import { UserFactory } from 'Database/factories'
+import { GroupFactory, UserFactory } from 'Database/factories'
 import Database from '@ioc:Adonis/Lucid/Database'
 import test from 'japa'
 import supertest from 'supertest'
@@ -35,6 +35,30 @@ test.group('Groups', (group) => {
     assert.exists(body.group.players, 'Players undefined')
     assert.equal(body.group.players.length, 1)
     assert.equal(body.group.players[0].id, groupPayload.master)
+  })
+
+  test('it should get a group by id', async (assert) => {
+    const master = await UserFactory.create()
+    const group = await GroupFactory.merge({ master: master.id }).create()
+    const { body } = await supertest(BASE_URL)
+      .get(`/groups/${group.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send()
+      .expect(200)
+
+    assert.exists(body.group, 'Group undefined')
+    assert.equal(body.group.id, group.id)
+    assert.equal(body.group.master, master.id)
+  })
+
+  test('it should return 401 when try to get a group without been logged', async (assert) => {
+    const master = await UserFactory.create()
+    const group = await GroupFactory.merge({ master: master.id }).create()
+    const { body } = await supertest(BASE_URL).get(`/groups/${group.id}`).send().expect(401)
+
+    assert.equal(body.code, 'BAD_REQUEST')
+    assert.equal(body.status, 401)
+    assert.include(body.message, 'Unauthorized')
   })
 
   test('it should return 422 when required data is not provided', async (assert) => {

@@ -5,9 +5,10 @@ import CreateUser from 'App/Validators/CreateUserValidator'
 import UpdateUser from 'App/Validators/UpdateUserValidator'
 
 export default class UsersController {
-  public async index({ request, response }: HttpContextContract) {
+  public async index({ request, response, bouncer }: HttpContextContract) {
     const id = request.param('id')
     const user = await User.findOrFail(id)
+    await bouncer.with('UserPolicy').authorize('view', user)
     return response.ok({ user })
   }
 
@@ -33,7 +34,7 @@ export default class UsersController {
     const id = request.param('id')
 
     const user = await User.findOrFail(id)
-    await bouncer.authorize('updateUser', user)
+    await bouncer.with('UserPolicy').authorize('update', user)
 
     if (avatar) {
       user.avatar = avatar

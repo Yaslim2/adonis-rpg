@@ -34,7 +34,7 @@ export default class ExceptionHandler extends HttpExceptionHandler {
     } else if (error.code === 'E_ROW_NOT_FOUND') {
       return ctx.response.status(error.status).send({
         code: 'BAD_REQUEST',
-        message: 'Resource not found',
+        message: 'resource not found',
         status: 404,
       })
     } else if (['E_INVALID_AUTH_UID', 'E_INVALID_AUTH_PASSWORD'].includes(error.code || '')) {
@@ -42,6 +42,24 @@ export default class ExceptionHandler extends HttpExceptionHandler {
         code: 'BAD_REQUEST',
         message: 'Invalid credentials',
         status: 400,
+      })
+    } else if (error.code === 'E_UNAUTHORIZED_ACCESS') {
+      return ctx.response.status(error.status).send({
+        code: 'BAD_REQUEST',
+        message: error.message,
+        status: error.status,
+      })
+    } else if (error.code === 'E_AUTHORIZATION_FAILURE') {
+      return ctx.response.status(error.status).send({
+        code: 'BAD_REQUEST',
+        message: error.message,
+        status: error.status,
+      })
+    } else if (error.code === 'E_ROUTE_NOT_FOUND') {
+      return ctx.response.status(error.status).send({
+        code: 'BAD_REQUEST',
+        message: 'Route not found',
+        status: error.status,
       })
     }
     return super.handle(error, ctx)

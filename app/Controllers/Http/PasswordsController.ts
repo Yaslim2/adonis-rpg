@@ -14,7 +14,6 @@ export default class PasswordsController {
 
     const random = await promisify(randomBytes)(24)
     const token = random.toString('hex')
-
     await user.related('tokens').updateOrCreate(
       {
         userId: user.id,
@@ -48,6 +47,7 @@ export default class PasswordsController {
 
     const tokenAge = Math.abs(userByToken.tokens[0].createdAt.diffNow('hours').hours)
     if (tokenAge > 2) {
+      await userByToken.tokens[0].delete()
       throw new TokenExpired()
     }
     userByToken.password = password

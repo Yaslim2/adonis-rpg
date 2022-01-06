@@ -80,6 +80,7 @@ test.group('Password', (group) => {
 
     assert.equal(body.code, 'BAD_REQUEST')
     assert.equal(body.status, '404')
+    assert.include(body.message, 'resource')
   })
 
   test('it cannot reset the password when token is expired after 2 hours', async (assert) => {
