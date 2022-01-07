@@ -27,6 +27,8 @@ export default class GroupRequestsController {
     const groupId = request.param('groupId') as number
     const userId = auth.user!.id
 
+    await Group.findOrFail(groupId)
+
     const existingGroupRequest = await GroupRequest.query()
       .where('groupId', groupId)
       .andWhere('userId', userId)
