@@ -49,6 +49,14 @@ export default class GroupsController {
     if (auth.user?.id !== group.master) {
       await bouncer.with('GroupPolicy').authorize('removePlayer', auth.user!)
     }
+    const userExists = await Group.query()
+      .whereHas('players', (query) => {
+        query.where('id', playerId)
+      })
+      .andWhere('id', groupId)
+      .first()
+
+    if (!userExists) throw new BadRequest('cannot remove a player that is not on the group', 400)
     if (playerId === group.master) throw new BadRequest('cannot remove master from group', 400)
     await group.related('players').detach([playerId])
     return response.noContent()
