@@ -6,7 +6,13 @@ export default class GroupsUsers extends BaseSchema {
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.primary(['user_id', 'group_id'])
-      table.integer('user_id').unsigned().references('id').inTable('users').notNullable()
+      table
+        .integer('user_id')
+        .unsigned()
+        .references('id')
+        .inTable('users')
+        .onDelete('CASCADE')
+        .notNullable()
       table
         .integer('group_id')
         .unsigned()

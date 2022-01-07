@@ -4,10 +4,21 @@ import Group from 'App/Models/Group'
 import CreateUser from 'App/Validators/CreateGroupValidator'
 
 export default class GroupsController {
-  public async index({ request, response }: HttpContextContract) {
+  public async indexOne({ request, response }: HttpContextContract) {
     const groupId = request.param('id')
     const group = await Group.findOrFail(groupId)
     return response.ok({ group })
+  }
+
+  public async index({ request, response }: HttpContextContract) {
+    const { ['user']: userId, text } = request.qs()
+
+    const page = request.input('page', 1)
+    const limit = request.input('limit', 5)
+
+    const groupsQuery = this.filterByQueryString(userId, text)
+    const groups = await groupsQuery.paginate(page, limit)
+    return response.ok({ groups })
   }
 
   public async store({ request, response }: HttpContextContract) {
@@ -49,5 +60,38 @@ export default class GroupsController {
     await bouncer.with('GroupPolicy').authorize('destroy', group)
     await group.delete()
     return response.noContent()
+  }
+
+  private filterByQueryString(userId: number, text: string) {
+    if (userId && text) return this.filterByUserAndText(userId, text)
+    else if (userId) return this.filterByUser(userId)
+    else if (text) return this.filterByText(text)
+    else return this.all()
+  }
+
+  private all() {
+    return Group.query().preload('players').preload('masterUser')
+  }
+
+  private filterByUser(userId: number) {
+    return Group.query()
+      .preload('players')
+      .preload('masterUser')
+      .withScopes((scope) => scope.withPlayer(userId))
+  }
+
+  private filterByText(text: string) {
+    return Group.query()
+      .preload('players')
+      .preload('masterUser')
+      .withScopes((scope) => scope.withNameOrDescription(text))
+  }
+
+  private filterByUserAndText(userId: number, text: string) {
+    return Group.query()
+      .preload('players')
+      .preload('masterUser')
+      .withScopes((scope) => scope.withPlayer(userId))
+      .withScopes((scope) => scope.withNameOrDescription(text))
   }
 }
